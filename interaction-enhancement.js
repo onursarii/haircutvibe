@@ -1,0 +1,6 @@
+/* Interactive enhancement layer for the HaircutVibe homepage. */
+(function(){
+  const articles=document.querySelectorAll('#articles article');
+  articles.forEach((a,i)=>{a.setAttribute('tabindex','0');a.setAttribute('role','button');const open=()=>{const d=document.createElement('dialog');d.style='max-width:760px;background:#1b1b1b;color:#f5f1ea;border:1px solid #d6b77a;padding:32px';d.innerHTML='<button style="float:right;background:none;color:#d6b77a;border:0;font-size:24px" aria-label="Close">×</button>'+a.innerHTML+'<p style="color:#aaa39a">Full guide view · HaircutVibe editorial</p>';document.body.append(d);d.showModal();d.querySelector('button').onclick=()=>d.close();d.addEventListener('close',()=>d.remove())};a.addEventListener('click',open);a.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')open()})});
+  document.querySelectorAll('.visual').forEach(v=>v.addEventListener('click',()=>{const q=encodeURIComponent(v.textContent);window.open('https://www.pinterest.com/search/pins/?q='+q,'_blank','noopener') }));
+})();
