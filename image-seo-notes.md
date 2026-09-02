@@ -1,0 +1,1 @@
+Image SEO architecture is maintained in the self-contained homepage. Curated image CDN integration should use licensed assets and exact source URLs before production.
