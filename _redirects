@@ -1,4 +1,4 @@
 /women.html /women/ 301
-/fade.html /low-fade-mid-fade-haircuts/ 301
-/crop-fringe.html /crop-and-fringe-haircuts/ 301
-/mullet.html /modern-mullet-haircuts/ 301
+/low-fade-mid-fade-haircuts/ /fade.html 200
+/crop-and-fringe-haircuts/ /crop-fringe.html 200
+/modern-mullet-haircuts/ /mullet.html 200
