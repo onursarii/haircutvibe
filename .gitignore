@@ -1,0 +1,15 @@
+# Cloudflare Wrangler
+.wrangler/
+.wrangler
+
+# Git internals and local metadata
+.git/
+.git/logs/
+.git/index
+
+# Dependencies and build output
+node_modules/
+dist/
+.cache/
+.DS_Store
+*.log
