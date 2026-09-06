@@ -1,0 +1,43 @@
+name: Fix Textured Layers Image
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Replace incorrect image
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import urllib.parse
+
+          path = Path('fall-2026-haircut-trends/index.html')
+          text = path.read_text()
+
+          old = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=82'
+          new = 'https://images.unsplash.com/photo-1778486163654-48acd821b518?auto=format&fit=crop&w=1000&q=82'
+
+          old_pin = urllib.parse.quote(old, safe='')
+          new_pin = urllib.parse.quote(new, safe='')
+
+          text = text.replace(old, new, 1)
+          text = text.replace(old_pin, new_pin, 1)
+          path.write_text(text)
+          PY
+
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add fall-2026-haircut-trends/index.html
+          git diff --cached --quiet || git commit -m 'Fix Textured Layers image'
+          git push
