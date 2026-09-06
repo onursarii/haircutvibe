@@ -1,0 +1,77 @@
+name: Replace fall haircut images
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  replace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace image URLs in order
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          p=Path('fall-2026-haircut-trends/index.html')
+          s=p.read_text()
+          urls=[
+          'https://www.southernliving.com/thmb/XN0-Gt3kgxokPmbyVthrYAHKCdw%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/textured-layers-3e0aca6092f94588b045aac076db3fae.jpg',
+          'https://www.southernliving.com/thmb/4v0h5wH7fxSDoOz4_p7kEMNrw0Y%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/shag-a3228fb21f7a4644a9a57bde7f18f55a.jpg',
+          'https://www.southernliving.com/thmb/Fy7Sy2oOCJ6W6PvCQEA6HFDb9P0%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/choppy-lob-81b400d7dfab4049b1a54df5d19d0667.jpg',
+          'https://www.southernliving.com/thmb/6Vmt4B6IzUA48PVhJkjj-oVBuI8%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/soft-curve-bob-7e89f6a560d7476ca9e7eebecf902304.jpg',
+          'https://www.southernliving.com/thmb/mLKFhDgDEM33fPuKMLO1Rj3dhe4%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/ginger-spice-c077ae4afb1349a7ab6e5aa29f8eb8b7.jpg',
+          'https://www.southernliving.com/thmb/fiNRCSzMoMZsPArjeSoXq80Bcs0%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/chic-bob-f831339146f44d21bb4f052f4c740bba.jpg',
+          'https://www.southernliving.com/thmb/anYNVaFFi04zO41YSm2l3-Gq5GA%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/retro-bob-b1ca7cabccfc481fbf75ef8cbeb7cbc1.jpg',
+          'https://www.southernliving.com/thmb/VKA1UA_N3UGneBHnqLyyqI1yOWA%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/blunt-97f2b6c037e043068f92f61906f80afc.jpg',
+          'https://www.southernliving.com/thmb/V3ewcqQfmmh8a4ddJGCUw1UN6qw%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/blunt-textured-bob-a00a93044d6d45feb3ca686033ecbbae.jpg',
+          'https://www.southernliving.com/thmb/Sb83wx-CmEw7J1Pr5NUTbVo0kio%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/curtain-bangs-0982af9da58a471eb5f9386f79bab798.jpg',
+          'https://www.southernliving.com/thmb/lbMAidLW94UOKYBv_nbnn86sdpw%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/shag-899e61fd1855478198b75e9d4790f942.jpg',
+          'https://www.southernliving.com/thmb/t5SLP2g0leGGkHhNq6OtYjttnB0%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/sharp-shoulder-882a7df6595849cb807fd73ea48c40b4.jpg',
+          'https://www.southernliving.com/thmb/hZNfcFcQ_iqqFa3qHX5XEXoTxxs%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/long-blunt-1456bf2131b740d9b7472c45459665c2.jpg',
+          'https://www.southernliving.com/thmb/bzCcsdy1xJ-PX1mBmNxn4BgR-UM%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/layered-curls-df24a77074f74d1baabd4fe1c794b236.jpg',
+          'https://www.southernliving.com/thmb/bc2LyImnbxIcA1PWZCavpskUUWw%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/blunt-bangs-abc158e1b70948a39c055a3b2f668502.jpg',
+          'https://www.southernliving.com/thmb/g8JUrcrlrXuZKO23NXrb4cTuuUY%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/curly-pixie-7a8865482c334f5ba3d42bf1b8e2e93b.jpg',
+          'https://www.southernliving.com/thmb/LMXyVcEhPZTJDUi_tXUpAtXNO1w%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/blunt-bob-0e393247ee094d27937d8fcc6a012453.jpg',
+          'https://www.southernliving.com/thmb/iaMZwQlNRTuE71d-0iUUZlq4Al0%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/bangs-12057980798f42b8a0656a1cd0439855.jpg',
+          'https://www.southernliving.com/thmb/xZzyACie4SXDghKInXEKqo_VLKU%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/textured-fringe-bob-f653d07b80154aeebada9fa6d905965f.jpg',
+          'https://www.southernliving.com/thmb/o8w0vF07QuDnCf8wfU08mH_tljc%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/heavy-lob-6290f8bc246a43e29a482338c9fccada.jpg',
+          'https://www.southernliving.com/thmb/4_juBnC5FpGoe36Mx7MF5rU9Fsc%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/blonde-curls-f146f529ab344173a8bcd1e0596147bb.jpg',
+          'https://www.southernliving.com/thmb/R44T1wll2ZhQNfxmvliITL9epq4%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/pixie_0_0-3cf83f2d7cee482fb6297ff8974b5b3b.jpg',
+          'https://www.southernliving.com/thmb/XzsfDtOCofosqgrxuckZz1MsLGU%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/layered-mid-length-f91f6a6472084d8ebb4c6d586b23a8a8.jpg',
+          'https://www.southernliving.com/thmb/IKp-2FYFSpFYBFBZ-J7fCy9u7DE%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/burgundy-e8247b8cf58d46b083802b1af95066fc.jpg',
+          'https://www.southernliving.com/thmb/qKcxdwoHo8Mn8A1FVJUpsYZChwM%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/soft-texture-15ec44d75d214eb2a1e961ec2c408840.jpg',
+          'https://www.southernliving.com/thmb/cdrUT295vkUJ7Bu7zpJ2uorMbXI%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/long-389a857081674e7995b5b60ab102d894.jpg',
+          'https://www.southernliving.com/thmb/3yogT8l8ztNSlpl60MdqFSZhusY%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/medium-curls-e8789fab1b334e66930933bf633c3bbc.jpg',
+          'https://www.southernliving.com/thmb/06QQFO7w4Cs5OrKhfb6ogyll7EA%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/curly-bob-f0f9167ee9cf40beb7ee539d626bb411.jpg',
+          'https://www.southernliving.com/thmb/2yMxzp1jxz5iMLUJ8X_Fqh0PXQc%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/crop-ea2916efb9e84d15bbbe33e5733c0937.jpg',
+          'https://www.southernliving.com/thmb/C5hgequOUHq-UM45WIsoyXrEPZc%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/long-bangs-0a69559b6ebe4640a0766b57ec7f8e57.jpg',
+          'https://www.southernliving.com/thmb/cXG1r5oxeTWpXuuppCv2duguaM8%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/pixie-3c58c2508111478f9adb4133089161e8.jpg',
+          'https://www.southernliving.com/thmb/0heMQT9pb9EpYoQjy796v4Cp7yg%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/sideswept-bangs-fdcf406bc353427792fedc0f08614780.jpg',
+          'https://www.southernliving.com/thmb/1uWjsULCoipbIgAjZDOOR_nvpsA%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/big-curls-69bbb637176842ef835d15a6835efa45.jpg',
+          'https://www.southernliving.com/thmb/0RJTSecB5X3vxqErBGbCWe2DaSc%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/angled-16bd06a11e9e48bcabfe0699ae66deae.jpg',
+          'https://www.southernliving.com/thmb/zbQSPScC1p4uJVn8p2n2AqZ2sS8%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/curls-49786e9f7d6f4fd5864ecfc688bfc3da.jpg',
+          'https://www.southernliving.com/thmb/q9k53n7JOGtlDf5kE_ozB9woFLI%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/layers-aeb3f08338bc4f6ebbd3f9f47621620f.jpg',
+          'https://www.southernliving.com/thmb/G4039KhHW0pWipfumS4hEp45Eyw%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/curly-super-pixie-cbc216f1071e457ea0cc8b6957cafd52.jpg',
+          'https://www.southernliving.com/thmb/Zk4WdIUxRZeTfQby4hT9suonidk%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/texture-0a2bca7b452f4ea5ba305af928b25124.jpg',
+          'https://www.southernliving.com/thmb/8Kk_DcydEEaGg49dE9gP2fIOMJk%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/curly-bangs-0cbe313ad05a4ffe9273d8e8ee8e04c5.jpg',
+          'https://www.southernliving.com/thmb/MRwDWrzvlhXrKHBySiITRrMl4T8%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/tousled-6449347083c24b03b863e1d66796154f.jpg',
+          'https://www.southernliving.com/thmb/-D5Ho5V_VhbM9Rlt9mEvCnBh3ZQ%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/curly-pixie-e9b64fc8e2234e6ca7d8c40f7270a14f.jpg',
+          'https://www.southernliving.com/thmb/3eNCFBZ8QaX_105guJhpilPn-zs%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/Screenshot2023-09-07at4.38.24PM-1c9e36e4f7c648dfa60e9911b862385d.png',
+          'https://www.southernliving.com/thmb/al8cHsB2a-B32L19BfLikWuZhx0%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/shaggy-218bef84a5b34321b7368de52cc10464.jpg',
+          'https://www.southernliving.com/thmb/Pd9Kq11CN_ToJKx9ln92uHCCDfg%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/lob-messy-6afd7ac8aed54deb804c0a96f48a3ee4.jpg',
+          'https://www.southernliving.com/thmb/9KR7JPFFYzlErCcIFqNmEDMFQaY%3D/1500x0/filters%3Ano_upscale%28%29%3Amax_bytes%28150000%29%3Astrip_icc%28%29%3Aformat%28webp%29/stacked-9af3d05baef34e8cae1fb61e462b4176.jpg'
+          ]
+          imgs=re.findall(r'<img\s+src="([^"]+)"',s)
+          if len(imgs)<45: raise SystemExit(f'Expected 45 images, found {len(imgs)}')
+          for i,u in enumerate(urls):
+              s=s.replace(imgs[i],u,1)
+              s=s.replace(imgs[i].replace('&','&amp;'),u.replace('&','&amp;'),1)
+          p.write_text(s)
+      - name: Commit
+        run: |
+          git config user.name github-actions
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add fall-2026-haircut-trends/index.html
+          git commit -m "Match fall haircut images to source examples" || exit 0
+          git push
