@@ -3,7 +3,7 @@ name: Reduce fall trends to 20
 on:
   push:
     paths:
-      - '.github/workflows/reduce-fall-trends-to-20.yml'
+      - '.reduce-fall-trends-trigger'
 
 jobs:
   update:
@@ -19,8 +19,8 @@ jobs:
           import base64, json, re, urllib.request, os
           repo='onursarii/haircutvibe'; path='fall-2026-haircut-trends/index.html'
           api=f'https://api.github.com/repos/{repo}/contents/{path}?ref=main'
-          req=urllib.request.Request(api,headers={'Authorization':f'Bearer {os.environ["GH_TOKEN"]}','Accept':'application/vnd.github+json'})
-          data=json.load(urllib.request.urlopen(req)); html=base64.b64decode(data['content']).decode()
+          h={'Authorization':f'Bearer {os.environ["GH_TOKEN"]}','Accept':'application/vnd.github+json'}
+          data=json.load(urllib.request.urlopen(urllib.request.Request(api,headers=h))); html=base64.b64decode(data['content']).decode()
           expected=['Textured Layers','Short and Wild Shag','Blunt Collarbone Cut','Soft Curved Bob','Wispy Bangs','Cheekbone-Grazing 90s Bob','Mia Wallace Bob','Mini Blunt Bob','Blunt Textured Cut','Curtain Bangs','Short Shag Cut','Sharp Shoulder Cut','1970s Long Cut','Lob-Length Curls','Choppy Layers','Curly Pixie Cut','Blunt Chin Bob','Barely-There Bangs','Textured Fringe Bob','Textured Lob']
           source=urllib.request.urlopen('https://www.southernliving.com/fashion-beauty/hairstyles/popular-hairstyles').read().decode('utf-8','ignore')
           for t in expected:
@@ -36,10 +36,11 @@ jobs:
               try:
                   r=urllib.request.urlopen(urllib.request.Request(u,method='HEAD',headers={'User-Agent':'Mozilla/5.0'}),timeout=15)
                   if r.status!=200: raise Exception(r.status)
-              except Exception as e: raise SystemExit(f'Image check failed for card {i}: {u} ({e})')
+              except Exception as e: raise SystemExit(f'Image check failed for card {i}: {e}')
           html=html[:a]+'<section class="grid">'+''.join(cards)+'</section>'+html[b:]
-          html=html.replace('<title>45 Fall 2026 Haircut Trends: Bobs, Bangs, Layers & Curls | HaircutVibe</title>','<title>20 Fall 2026 Haircut Trends: Bobs, Bangs, Layers & Curls | HaircutVibe</title>').replace('Explore 45 fall 2026 haircut ideas','Explore 20 fall 2026 haircut ideas').replace('<h1>45 Fall 2026 Haircut Trends Worth Saving</h1>','<h1>20 Fall 2026 Haircut Trends Worth Saving</h1>').replace('We rounded up 45 haircut ideas','We rounded up 20 haircut ideas').replace('currently features 45 fall 2026 cuts','currently features 45 fall 2026 cuts; this guide selects the first 20').replace('Reference: Southern Living\'s “These Haircuts Are Going To Be Huge For Fall 2026,” updated July 28, 2026.','Reference checked against Southern Living\'s “These Haircuts Are Going To Be Huge For Fall 2026,” updated July 28, 2026. This guide intentionally selects the first 20 verified styles.')
+          repl=[('<title>45 Fall 2026 Haircut Trends: Bobs, Bangs, Layers & Curls | HaircutVibe</title>','<title>20 Fall 2026 Haircut Trends: Bobs, Bangs, Layers & Curls | HaircutVibe</title>'),('Explore 45 fall 2026 haircut ideas','Explore 20 fall 2026 haircut ideas'),('<h1>45 Fall 2026 Haircut Trends Worth Saving</h1>','<h1>20 Fall 2026 Haircut Trends Worth Saving</h1>'),('We rounded up 45 haircut ideas','We rounded up 20 haircut ideas'),('currently features 45 fall 2026 cuts','currently features 45 fall 2026 cuts; this guide selects the first 20')]
+          for x,y in repl: html=html.replace(x,y)
           body=json.dumps({'message':'Reduce fall 2026 haircut trends guide to 20 verified styles','content':base64.b64encode(html.encode()).decode(),'sha':data['sha'],'branch':'main'}).encode()
-          put=urllib.request.Request(api,data=body,method='PUT',headers={'Authorization':f'Bearer {os.environ["GH_TOKEN"]}','Accept':'application/vnd.github+json','Content-Type':'application/json'})
+          put=urllib.request.Request(api,data=body,method='PUT',headers={**h,'Content-Type':'application/json'})
           print(json.load(urllib.request.urlopen(put))['commit']['sha'])
           PY
