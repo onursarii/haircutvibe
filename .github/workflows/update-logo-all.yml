@@ -1,0 +1,56 @@
+name: Standardize site logo
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  update-logo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update all HTML headers
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          changed = []
+          css = '.logo{display:flex!important;align-items:center!important;max-height:62px!important;font-size:0!important;letter-spacing:0!important;text-decoration:none!important}.logo img{display:block;width:220px;height:auto;max-height:62px;object-fit:contain;object-position:left center}@media(max-width:700px){.logo img{width:190px}}@media(max-width:430px){.logo img{width:175px}}'
+
+          for path in root.rglob('*.html'):
+              if '.git' in path.parts:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              original = text
+              text = text.replace('<a class="logo" href="/">HAIRCUTVIBE</a>', '<a class="logo" href="/"><img src="/logo.svg" alt="HaircutVibe"></a>')
+              text = re.sub(r'<a class="logo" href="/">\s*HAIRCUTVIBE\s*</a>', '<a class="logo" href="/"><img src="/logo.svg" alt="HaircutVibe"></a>', text)
+              if '<link rel="icon" href="/favicon.svg"' not in text and '</head>' in text:
+                  text = text.replace('</head>', '<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n</head>', 1)
+              if '.logo img{' not in text and '</style>' in text:
+                  text = text.replace('</style>', css + '</style>', 1)
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  changed.append(str(path))
+
+          print('Updated:', len(changed))
+          for p in changed:
+              print(p)
+
+      - name: Commit changes and remove temporary workflow
+        shell: bash
+        run: |
+          rm -f .github/workflows/update-logo-all.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Use new logo across all pages"
+            git push
+          fi
