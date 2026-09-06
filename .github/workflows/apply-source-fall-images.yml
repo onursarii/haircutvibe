@@ -1,0 +1,40 @@
+name: Apply exact source images
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  replace:
+    if: github.event.head_commit.message != 'Apply exact source images from Southern Living'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get exact article images
+        shell: python
+        run: |
+          import html, re, requests
+          from pathlib import Path
+          source=requests.get('https://www.southernliving.com/fashion-beauty/hairstyles/popular-hairstyles',timeout=30,headers={'User-Agent':'Mozilla/5.0'}).text
+          source=html.unescape(source)
+          names=[
+          'textured-layers-3e0aca6092f94588b045aac076db3fae.jpg','shag-a3228fb21f7a4644a9a57bde7f18f55a.jpg','choppy-lob-81b400d7dfab4049b1a54df5d19d0667.jpg','soft-curve-bob-7e89f6a560d7476ca9e7eebecf902304.jpg','ginger-spice-c077ae4afb1349a7ab6e5aa29f8eb8b7.jpg','chic-bob-f831339146f44d21bb4f052f4c740bba.jpg','retro-bob-b1ca7cabccfc481fbf75ef8cbeb7cbc1.jpg','blunt-97f2b6c037e043068f92f61906f80afc.jpg','blunt-textured-bob-a00a93044d6d45feb3ca686033ecbbae.jpg','curtain-bangs-0982af9da58a471eb5f9386f79bab798.jpg','shag-899e61fd1855478198b75e9d4790f942.jpg','sharp-shoulder-882a7df6595849cb807fd73ea48c40b4.jpg','long-blunt-1456bf2131b740d9b7472c45459665c2.jpg','layered-curls-df24a77074f74d1baabd4fe1c794b236.jpg','blunt-bangs-abc158e1b70948a39c055a3b2f668502.jpg','curly-pixie-7a8865482c334f5ba3d42bf1b8e2e93b.jpg','blunt-bob-0e393247ee094d27937d8fcc6a012453.jpg','bangs-12057980798f42b8a0656a1cd0439855.jpg','textured-fringe-bob-f653d07b80154aeebada9fa6d905965f.jpg','heavy-lob-6290f8bc246a43e29a482338c9fccada.jpg','blonde-curls-f146f529ab344173a8bcd1e0596147bb.jpg','pixie_0_0-3cf83f2d7cee482fb6297ff8974b5b3b.jpg','layered-mid-length-f91f6a6472084d8ebb4c6d586b23a8a8.jpg','burgundy-e8247b8cf58d46b083802b1af95066fc.jpg','soft-texture-15ec44d75d214eb2a1e961ec2c408840.jpg','long-389a857081674e7995b5b60ab102d894.jpg','medium-curls-e8789fab1b334e66930933bf633c3bbc.jpg','curly-bob-f0f9167ee9cf40beb7ee539d626bb411.jpg','crop-ea2916efb9e84d15bbbe33e5733c0937.jpg','long-bangs-0a69559b6ebe4640a0766b57ec7f8e57.jpg','pixie-3c58c2508111478f9adb4133089161e8.jpg','sideswept-bangs-fdcf406bc353427792fedc0f08614780.jpg','big-curls-69bbb637176842ef835d15a6835efa45.jpg','angled-16bd06a11e9e48bcabfe0699ae66deae.jpg','curls-49786e9f7d6f4fd5864ecfc688bfc3da.jpg','layers-aeb3f08338bc4f6ebbd3f9f47621620f.jpg','curly-super-pixie-cbc216f1071e457ea0cc8b6957cafd52.jpg','texture-0a2bca7b452f4ea5ba305af928b25124.jpg','curly-bangs-0cbe313ad05a4ffe9273d8e8ee8e04c5.jpg','tousled-6449347083c24b03b863e1d66796154f.jpg','curly-pixie-e9b64fc8e2234e6ca7d8c40f7270a14f.jpg','Screenshot2023-09-07at4.38.24PM-1c9e36e4f7c648dfa60e9911b862385d.png','shaggy-218bef84a5b34321b7368de52cc10464.jpg','lob-messy-6afd7ac8aed54deb804c0a96f48a3ee4.jpg','stacked-9af3d05baef34e8cae1fb61e462b4176.jpg'
+          ]
+          found=[]
+          for n in names:
+              m=re.search(r'https://www\\.southernliving\\.com/thmb/[^"\\'<>\\s]*'+re.escape(n),source)
+              if not m: raise SystemExit('Missing source image: '+n)
+              found.append(m.group(0))
+          p=Path('fall-2026-haircut-trends/index.html')
+          s=p.read_text()
+          imgs=re.findall(r'<img\\s+src="([^"]+)"',s)
+          if len(imgs)<45: raise SystemExit(f'Expected 45 page images, found {len(imgs)}')
+          for i,u in enumerate(found): s=s.replace(imgs[i],u,1)
+          p.write_text(s)
+      - name: Commit source image mapping
+        run: |
+          git config user.name github-actions
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add fall-2026-haircut-trends/index.html
+          git commit -m 'Apply exact source images from Southern Living' || exit 0
+          git push
