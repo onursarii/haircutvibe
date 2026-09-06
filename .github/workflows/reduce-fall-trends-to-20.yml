@@ -1,0 +1,84 @@
+name: Reduce fall trends to 20
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Reduce and verify page
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import base64, json, re, urllib.request
+          from html.parser import HTMLParser
+
+          repo='onursarii/haircutvibe'
+          path='fall-2026-haircut-trends/index.html'
+          api=f'https://api.github.com/repos/{repo}/contents/{path}?ref=main'
+          req=urllib.request.Request(api, headers={'Authorization':f'Bearer {__import__("os").environ["GH_TOKEN"]}','Accept':'application/vnd.github+json'})
+          data=json.load(urllib.request.urlopen(req))
+          html=base64.b64decode(data['content']).decode()
+
+          expected=[
+            'Textured Layers','Short and Wild Shag','Blunt Collarbone Cut','Soft Curved Bob','Wispy Bangs',
+            'Cheekbone-Grazing 90s Bob','Mia Wallace Bob','Mini Blunt Bob','Blunt Textured Cut','Curtain Bangs',
+            'Short Shag Cut','Sharp Shoulder Cut','1970s Long Cut','Lob-Length Curls','Choppy Layers',
+            'Curly Pixie Cut','Blunt Chin Bob','Barely-There Bangs','Textured Fringe Bob','Textured Lob'
+          ]
+
+          # Verify the 20 selected styles against the current Southern Living source article.
+          source=urllib.request.urlopen('https://www.southernliving.com/fashion-beauty/hairstyles/popular-hairstyles').read().decode('utf-8','ignore')
+          for title in expected:
+              if title not in source:
+                  raise SystemExit(f'Source verification failed: {title}')
+
+          parser=HTMLParser()
+          # Keep only the first 20 .item articles.
+          starts=[m.start() for m in re.finditer(r'<article class="item">', html)]
+          if len(starts) < 20:
+              raise SystemExit(f'Expected at least 20 cards, found {len(starts)}')
+          section_start=html.index('<section class="grid">')
+          section_end=html.index('</section>', section_start)+len('</section>')
+          grid=html[section_start:section_end]
+          cards=re.findall(r'<article class="item">.*?</article>', grid, flags=re.S)
+          if len(cards) < 20:
+              raise SystemExit(f'Could not parse 20 cards, found {len(cards)}')
+          cards=cards[:20]
+
+          # Verify card titles exactly match the first 20 source titles and image URLs return 200.
+          for i,(card,title) in enumerate(zip(cards,expected),1):
+              m=re.search(r'<h2>\d+\. (.*?)</h2>',card)
+              if not m or m.group(1).strip()!=title:
+                  raise SystemExit(f'Card {i} title mismatch: {m.group(1) if m else "missing"} != {title}')
+              img=re.search(r'<img src="([^"]+)"',card)
+              if not img:
+                  raise SystemExit(f'Card {i} has no image')
+              u=img.group(1)
+              r=urllib.request.Request(u,method='HEAD',headers={'User-Agent':'Mozilla/5.0'})
+              try:
+                  resp=urllib.request.urlopen(r,timeout=15)
+                  if resp.status != 200:
+                      raise SystemExit(f'Card {i} image returned {resp.status}: {u}')
+              except Exception as e:
+                  raise SystemExit(f'Card {i} image check failed: {u} ({e})')
+
+          new_grid='<section class="grid">'+''.join(cards)+'</section>'
+          html=html[:section_start]+new_grid+html[section_end:]
+          html=html.replace('<title>45 Fall 2026 Haircut Trends: Bobs, Bangs, Layers & Curls | HaircutVibe</title>','<title>20 Fall 2026 Haircut Trends: Bobs, Bangs, Layers & Curls | HaircutVibe</title>')
+          html=html.replace('Explore 45 fall 2026 haircut ideas','Explore 20 fall 2026 haircut ideas')
+          html=html.replace('<h1>45 Fall 2026 Haircut Trends Worth Saving</h1>','<h1>20 Fall 2026 Haircut Trends Worth Saving</h1>')
+          html=html.replace('We rounded up 45 haircut ideas','We rounded up 20 haircut ideas')
+          html=html.replace('currently features 45 fall 2026 cuts','currently features 45 fall 2026 cuts; this guide selects the first 20')
+          html=html.replace('Reference: Southern Living\'s “These Haircuts Are Going To Be Huge For Fall 2026,” updated July 28, 2026.','Reference checked against Southern Living\'s “These Haircuts Are Going To Be Huge For Fall 2026,” updated July 28, 2026. This guide intentionally selects the first 20 verified styles.')
+
+          body=json.dumps({'message':'Reduce fall 2026 haircut trends guide to 20 verified styles','content':base64.b64encode(html.encode()).decode(),'sha':data['sha'],'branch':'main'}).encode()
+          put=urllib.request.Request(api,data=body,method='PUT',headers={'Authorization':f'Bearer {__import__("os").environ["GH_TOKEN"]}','Accept':'application/vnd.github+json','Content-Type':'application/json'})
+          result=json.load(urllib.request.urlopen(put))
+          print('Updated commit:',result['commit']['sha'])
+          print('Verified 20 source titles and 20 image URLs.')
+          PY
