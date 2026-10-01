@@ -1,0 +1,38 @@
+name: Upload images to Cloudflare R2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "r2-staging/**"
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload staged images to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          set -e
+          ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+
+          find r2-staging -type f -name "*.b64" -print0 | while IFS= read -r -d '' file; do
+            relative="${file#r2-staging/}"
+            target="${relative%.b64}"
+            mkdir -p "$(dirname "/tmp/${target}")"
+            base64 -d "$file" > "/tmp/${target}"
+            echo "Uploading $target"
+            aws s3 cp "/tmp/${target}" "s3://${R2_BUCKET}/${target}" --endpoint-url "$ENDPOINT" --content-type "image/jpeg"
+          done
+
+          echo "R2 upload completed."
