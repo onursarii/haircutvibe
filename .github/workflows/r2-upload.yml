@@ -26,14 +26,30 @@ jobs:
           set -e
           ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
 
-          find r2-staging -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" \) -print0 | while IFS= read -r -d '' file; do
+          find r2-staging -type f -print0 | while IFS= read -r -d '' file; do
             target="${file#r2-staging/}"
-            case "${file##*.}" in
-              jpg|jpeg) MIME="image/jpeg" ;;
-              png) MIME="image/png" ;;
-              webp) MIME="image/webp" ;;
-              *) MIME="application/octet-stream" ;;
+            MIME="$(file --brief --mime-type "${file}" 2>/dev/null || true)"
+
+            case "${MIME}" in
+              image/*) ;;
+              *)
+                case "${file##*.}" in
+                  jpg|jpeg|jpe) MIME="image/jpeg" ;;
+                  png) MIME="image/png" ;;
+                  webp) MIME="image/webp" ;;
+                  gif) MIME="image/gif" ;;
+                  svg|svgz) MIME="image/svg+xml" ;;
+                  avif) MIME="image/avif" ;;
+                  bmp) MIME="image/bmp" ;;
+                  tif|tiff) MIME="image/tiff" ;;
+                  ico) MIME="image/x-icon" ;;
+                  heic) MIME="image/heic" ;;
+                  heif) MIME="image/heif" ;;
+                  *) MIME="application/octet-stream" ;;
+                esac
+                ;;
             esac
+
             echo "Uploading ${target} as ${MIME}"
             aws s3 cp "${file}" "s3://${R2_BUCKET}/${target}" \
               --endpoint-url "${ENDPOINT}" \
