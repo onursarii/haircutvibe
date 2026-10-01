@@ -28,8 +28,17 @@ jobs:
 
           find r2-staging -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" \) -print0 | while IFS= read -r -d '' file; do
             target="${file#r2-staging/}"
-            echo "Uploading ${target}"
-            aws s3 cp "${file}" "s3://${R2_BUCKET}/${target}" --endpoint-url "${ENDPOINT}"
+            case "${file##*.}" in
+              jpg|jpeg) MIME="image/jpeg" ;;
+              png) MIME="image/png" ;;
+              webp) MIME="image/webp" ;;
+              *) MIME="application/octet-stream" ;;
+            esac
+            echo "Uploading ${target} as ${MIME}"
+            aws s3 cp "${file}" "s3://${R2_BUCKET}/${target}" \
+              --endpoint-url "${ENDPOINT}" \
+              --content-type "${MIME}" \
+              --content-disposition "inline"
           done
 
           echo "R2 upload completed."
